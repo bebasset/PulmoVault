@@ -1,0 +1,53 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pulmovault_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pulmovault_db
+      POSTGRES_USER: pulmovault
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme_in_production}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulmovault -d pulmovault_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pulmovault_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://pulmovault:${DB_PASSWORD:-changeme_in_production}@postgres:5432/pulmovault_db
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/logs:/app/logs
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: pulmovault_web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres_data:
+    driver: local

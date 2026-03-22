@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  THERAPIST
+}
+
+enum Modality {
+  SCHOOL
+  HOME
+}
+
+enum SecretionViscosity {
+  THICK
+  THIN
+  LOOSE
+}
+
+enum SecretionType {
+  PRODUCTIVE
+  NON_PRODUCTIVE
+  SWALLOW
+}
+
+enum SecretionAmount {
+  SMALL
+  MEDIUM
+  LARGE
+  EXCESSIVE
+}
+
+enum HydrationMethod {
+  CARETAKER_GTUBE
+  THERAPIST
+}
+
+model User {
+  id                    String    @id @default(uuid())
+  nameEncrypted         String    @map("name_encrypted")
+  emailEncrypted        String    @unique @map("email_encrypted")
+  emailHash             String    @unique @map("email_hash")
+  passwordHash          String    @map("password_hash")
+  role                  UserRole  @default(THERAPIST)
+  isActive              Boolean   @default(true) @map("is_active")
+  biometricCredentialId String?   @map("biometric_credential_id")
+  biometricPublicKey    String?   @map("biometric_public_key")
+  refreshTokenHash      String?   @map("refresh_token_hash")
+  failedLoginAttempts   Int       @default(0) @map("failed_login_attempts")
+  lockedUntil           DateTime? @map("locked_until")
+  lastLoginAt           DateTime? @map("last_login_at")
+  lastLoginIp           String?   @map("last_login_ip")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  sessions  TherapySession[]
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model Patient {
+  id              String   @id @default(uuid())
+  patientIdEnc    String   @map("patient_id_enc")
+  patientIdHash   String   @unique @map("patient_id_hash")
+  nameEncrypted   String   @map("name_encrypted")
+  allergies       String   @default("NKA")
+  icd10Code       String   @map("icd10_code")
+  frequencyPerWeek Int?    @map("frequency_per_week")
+  unitsPerWeek    Int?     @map("units_per_week")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  sessions TherapySession[]
+
+  @@map("patients")
+}
+
+model TherapySession {
+  id                   String              @id @default(uuid())
+  patientId            String              @map("patient_id")
+  therapistId          String              @map("therapist_id")
+  pageNumber           Int?                @map("page_number")
+  totalPages           Int?                @map("total_pages")
+  sessionMonth         String?             @map("session_month")
+  datePerformed        DateTime            @map("date_performed")
+  timeIn               String              @map("time_in")
+  timeOut              String              @map("time_out")
+  unitsOfService       Int?                @map("units_of_service")
+  modality             Modality?
+
+  // Modalities
+  nebulizationDone     Boolean             @default(false) @map("nebulization_done")
+  chestPtDone          Boolean             @default(false) @map("chest_pt_done")
+  coughAssist          Boolean             @default(false) @map("cough_assist")
+  nasalLavage          Boolean             @default(false) @map("nasal_lavage")
+  segmentalStretching  Boolean             @default(false) @map("segmental_stretching")
+  allPositionsCompleted Boolean            @default(false) @map("all_positions_completed")
+  flatSidePositions    Boolean             @default(false) @map("flat_side_positions")
+  suctionTechniques    String?             @map("suction_techniques")
+  g5FrequencyHz        Int?                @map("g5_frequency_hz")
+  airwayClearanceMethods String?           @map("airway_clearance_methods")
+
+  // Vitals
+  o2SatPre             Float?              @map("o2_sat_pre")
+  o2SatPost            Float?              @map("o2_sat_post")
+  respRatePre          Int?                @map("resp_rate_pre")
+  respRatePost         Int?                @map("resp_rate_post")
+  heartRatePre         Int?                @map("heart_rate_pre")
+  heartRatePost        Int?                @map("heart_rate_post")
+
+  // Breath Sounds
+  breathSoundsPre      String?             @map("breath_sounds_pre")
+  breathSoundsPost     String?             @map("breath_sounds_post")
+  breathSoundsDecreased Boolean            @default(false) @map("breath_sounds_decreased")
+  breathSoundsImproved Boolean             @default(false) @map("breath_sounds_improved")
+  outcomeResults       String?             @map("outcome_results")
+
+  // Respiratory Equipment
+  onVentilator         Boolean             @default(false) @map("on_ventilator")
+  tracheaCare          Boolean             @default(false) @map("trachea_care")
+  tracheaSuctioning    Boolean             @default(false) @map("trachea_suctioning")
+
+  // Secretions
+  secretionViscosity   SecretionViscosity? @map("secretion_viscosity")
+  nasalSecretions      Boolean             @default(false) @map("nasal_secretions")
+  secretionType        SecretionType?      @map("secretion_type")
+  secretionAmount      SecretionAmount?    @map("secretion_amount")
+  secretionColor       String?             @map("secretion_color")
+
+  // Hydration & Environment
+  hydrationMethod      HydrationMethod?    @map("hydration_method")
+  adverseReactions     Boolean             @default(false) @map("adverse_reactions")
+  adverseReactionsNotes String?            @map("adverse_reactions_notes")
+  universalPrecautions Boolean             @default(true) @map("universal_precautions")
+  roomAirOrO2Liters    String?             @map("room_air_or_o2_liters")
+  dignityZone          Boolean             @default(true) @map("dignity_zone")
+
+  // Signature
+  caretakerSignatureUrl     String?         @map("caretaker_signature_url")
+  caretakerBiometricVerified Boolean        @default(false) @map("caretaker_biometric_verified")
+  caretakerBiometricData    String?         @map("caretaker_biometric_data")
+  signedAt              DateTime?           @map("signed_at")
+
+  createdAt            DateTime             @default(now()) @map("created_at")
+  updatedAt            DateTime             @updatedAt @map("updated_at")
+
+  patient   Patient @relation(fields: [patientId], references: [id])
+  therapist User    @relation(fields: [therapistId], references: [id])
+
+  @@map("therapy_sessions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  action     String
+  resource   String
+  resourceId String?  @map("resource_id")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  success    Boolean  @default(true)
+  details    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+
+model WebAuthnCredential {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  credentialId  String   @unique @map("credential_id")
+  publicKey     String   @map("public_key")
+  counter       Int      @default(0)
+  deviceType    String?  @map("device_type")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("webauthn_credentials")
+}

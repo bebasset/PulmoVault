@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "PulmoVault",
+    "slug": "pulmovault",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0960d6"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.independentpulmonary.pulmovault",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "PulmoVault uses Face ID to securely authenticate therapists and verify caretaker signatures.",
+        "NSCameraUsageDescription": "Used for facial recognition authentication."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0960d6"
+      },
+      "package": "com.independentpulmonary.pulmovault",
+      "permissions": [
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow PulmoVault to use Face ID for secure authentication."
+        }
+      ]
+    ],
+    "scheme": "pulmovault"
+  }
+}
